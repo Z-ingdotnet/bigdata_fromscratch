@@ -1,0 +1,147 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "root\n",
+      " |-- key: binary (nullable = true)\n",
+      " |-- value: binary (nullable = true)\n",
+      " |-- topic: string (nullable = true)\n",
+      " |-- partition: integer (nullable = true)\n",
+      " |-- offset: long (nullable = true)\n",
+      " |-- timestamp: timestamp (nullable = true)\n",
+      " |-- timestampType: integer (nullable = true)\n",
+      "\n"
+     ]
+    }
+   ],
+   "source": [
+    "#Use Kafka source for streaming queries \n",
+    "\n",
+    "\n",
+    "#!hdfs dfs -mkdir /tmp/iverson/checkpointLocation\n",
+    "#os.environ['PYSPARK_SUBMIT_ARGS'] = '--packages org.apache.spark:spark-sql-kafka-0-10_2.11:2.4.0,org.apache.spark:spark-streaming-kafka-0-10_2.11:2.4.0'\n",
+    "\n",
+    "#!echo 'sc.getConf.get(\"spark.home\")' | spark-shell\n",
+    "#!cd $SPARK_HOME\n",
+    "\n",
+    "import findspark\n",
+    "findspark.init(spark_home=\"/opt/cloudera/parcels/CDH-6.2.1-1.cdh6.2.1.p0.4951328/lib/spark\")\n",
+    "\n",
+    "KAFKA_TOPIC  = \"IZkafkatopic.public.testiz\"\n",
+    "KAFKA_BOOTSTRAP_SERVERS_CONS = hname2\n",
+    "\n",
+    "\n",
+    "\n",
+    "customparksession.sparkContext.setLogLevel(\"WARN\")\n",
+    "#customparksession.sparkContext.setLogLevel(\"ERROR\")\n",
+    "#print(\" kafka Started ...\")\n",
+    "# Construct a streaming DataFrame that reads from iztopics\n",
+    "iz_df = customparksession \\\n",
+    ".readStream \\\n",
+    ".format(\"kafka\") \\\n",
+    ".option(\"kafka.bootstrap.servers\", KAFKA_BOOTSTRAP_SERVERS_CONS) \\\n",
+    ".option(\"subscribe\", KAFKA_TOPIC) \\\n",
+    ".option(\"startingOffsets\", \"earliest\") \\\n",
+    ".option(\"max.poll.records\", 100)\\\n",
+    ".load()\n",
+    "\n",
+    "iz_df.printSchema()\n",
+    "\n",
+    "\n",
+    "#df=iz_df.selectExpr(\"CAST(key AS STRING)\", \"CAST(value AS STRING)\", \"CAST(topic AS STRING)\", \"CAST(partition AS STRING)\", \"CAST(offset AS STRING)\", \"CAST(timestamp AS STRING)\", \"CAST(timestampType AS STRING)\")\n",
+    "df=iz_df.selectExpr(\"CAST(key AS STRING) AS key\", \"to_json(struct(*)) AS value\")\n",
+    "\n",
+    "\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [],
+   "source": [
+    "#Write using Kafka source streaming query output\n",
+    "\n",
+    "#readStream\n",
+    "#writeStream\n",
+    "#.format(\"console\")\n",
+    "#.option(\"startingOffsetsByTimestamp\",\"\"\"{\"IZkafkatopic.public.testiz\":{\"0\": 1595882598000, \"1\": 1595882598000, \"2\": 1595882598000, \"3\": 1595882598000, \"4\": 1595882598000}}\"\"\")\\\n",
+    "#.option(\"max.poll.records\", 100)\\\n",
+    "#.option(\"startingOffsets\", \"\"\"{\"IZkafkatopic.public.testiz\":{\"2\":491437,\"4\":537712,\"1\":561234,\"3\":554189,\"0\":548887}}\"\"\") \\\n",
+    "\n",
+    "KAFKA_TOPIC_2_Write_2  = \"IZkafkatopic2.public.testiz\"\n",
+    "\n",
+    "rawQuery = df \\\n",
+    ".writeStream \\\n",
+    ".format(\"kafka\") \\\n",
+    ".outputMode(\"append\")\\\n",
+    ".option(\"kafka.bootstrap.servers\", KAFKA_BOOTSTRAP_SERVERS_CONS) \\\n",
+    ".option(\"topic\", KAFKA_TOPIC_2_Write_2) \\\n",
+    ".option(\"checkpointLocation\", \"/tmp/iverson/checkpointLocation/\") \\\n",
+    ".start()\n",
+    "#.awaitTermination()\n",
+    "    \n",
+    "    \n",
+    "\n",
+    "print(rawQuery.status)\n",
+    "time.sleep(10)\n",
+    "print(rawQuery.status)\n",
+    "rawQuery.stop()\n",
+    "\n",
+    "#rawQuery.awaitTermination()\n",
+    "\n",
+    "#import threading  \n",
+    "  \n",
+    "#class thread(threading.Thread):  \n",
+    "#    def __init__(self, query):  \n",
+    "#        threading.Thread.__init__(self)  \n",
+    "#        self.query = query  \n",
+    "  \n",
+    "#        # helper function to execute the threads \n",
+    "#    def run(self):  \n",
+    "#        print(\"progress \", query.lastProgress);  \n",
+    "        \n",
+    "#monitoring = thread(rawQuery)\n",
+    "#rawQuery.awaitTermination()       "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3.8.5 64-bit ('ProgramData': virtualenv)",
+   "name": "python385jvsc74a57bd0b3ba2566441a7c06988d0923437866b63cedc61552a5af99d1f4fb67d367b25f"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
