@@ -1,0 +1,175 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2.1.0-cdh6.2.1\n"
+     ]
+    }
+   ],
+   "source": [
+    "#check kafka connect API version and compatitiability and also write hostname to a variable for later use\n",
+    "\n",
+    "print(connect.api.version)\n",
+    "hname=!hostname\n",
+    "hname=str(hname).strip(\"'r' ?\\([^)]+\\)'\")\n",
+    "#import re print(re.sub(r\" ?\\([^)]+\\)\", \"\", hname))\n",
+    "hname2=hname+\":9092\""
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 26,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "#input configuration settings to json\n",
+    "\n",
+    "config = {\n",
+    "    \"connector.class\": \"io.debezium.connector.postgresql.PostgresConnector\",\n",
+    "    \"connection.url\": \"jdbc:postgresql://localhost/postgres?user=postgres&password=postgres\",\n",
+    "     #\"tasks.max\": \"1\",\n",
+    "    \"database.hostname\":hname,\n",
+    "    \"database.port\":\"5432\",\n",
+    "    \"database.user\": \"postgres\",\n",
+    "    \"database.password\": \"postgres\",\n",
+    "    \"database.server.id\":\"1\",\n",
+    "    \"database.dbname\": \"postgres\",\n",
+    "    \"database.history.kafka.bootstrap.servers\":hname2,\n",
+    "    \"database.server.name\": \"IZkafkatopic\",\n",
+    "    #\"database.include.list\":\"testiz\",\n",
+    "    #\"database.whitelist\": \"izstreaming\",\n",
+    "    \"table.whitelist\": \"public.testiz\",\n",
+    "    #schema.whitelist = public\n",
+    "    \"publication.name\":\"debezium_iz\",\n",
+    "    \"slot.name\": \"debezium_iz\",\n",
+    "    \"plugin.name\": \"pgoutput\",\n",
+    "    \n",
+    "    #\"database.history.kafka.topic\": \"schema-changes.izstreaming\",\n",
+    "    #\"include.schema.changes\": \"true\",\n",
+    "    #\"auto.create.topics.enable\":\"true\",\n",
+    "    #\"topic.creation.enable\":\"true\",\n",
+    "    #\"snapshot.mode\" : \"always\",\n",
+    "    #\"delete.topic.enable\" : \"true\",\n",
+    "     \n",
+    "    \"topic.creation.default.replication.factor\": 1,\n",
+    "    \"topic.creation.default.partitions\": 1,\n",
+    "    \"topic.creation.default.cleanup.policy\": \"compact\",\n",
+    "    \"topic.creation.default.compression.type\": \"gzip\",\n",
+    "    #lz4\n",
+    "    \"topic.creation.default.delete.retention.ms\" : 15920,\n",
+    "     #1592000000\n",
+    "    \n",
+    "    \"key.converter\": \"org.apache.kafka.connect.json.JsonConverter\",\n",
+    "    \"value.converter\": \"org.apache.kafka.connect.json.JsonConverter\"\n",
+    "    #\"key.converter\": \"io.confluent.connect.avro.AvroConverter\",\n",
+    "    #\"key.converter.schema.registry.url\": \"http://localhost:8081\",\n",
+    "    #\"value.converter\": \"io.confluent.connect.avro.AvroConverter\",\n",
+    "    #\"value.converter.schema.registry.url\": \"http://localhost:8081\",\n",
+    "    #\"table.whitelist\": \"xyz\",\n",
+    "    #\"mode\": \"timestamp\",\n",
+    "    #\"timestamp.column.name\": \"lastupdated\",\n",
+    "    #\"topic.prefix\": \"test-IZ-\"\n",
+    "}"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {
+    "scrolled": false
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['izwhatverconnector', 'p_connector', 'cc_transaction-connector']"
+      ]
+     },
+     "execution_count": 6,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#check connector has been created\n",
+    "\n",
+    "del connect.connectors['izwhatverconnector']\n",
+    "time.sleep(2)\n",
+    "connect.connectors['izwhatverconnector'] = config\n",
+    "time.sleep(2)\n",
+    "connector = connect.connectors['izwhatverconnector']\n",
+    "time.sleep(2)\n",
+    "list(map(lambda c: c.name, connect.connectors))\n",
+    "\n",
+    "#modify connector settings\n",
+    "#connector.config['poll.time.ms'] = 200"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {
+    "scrolled": true
+   },
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "{'IZkafkatopic.public.testiz',\n",
+       " 'IZkafkatopic4.public.testiz',\n",
+       " 'TopicTestByTr',\n",
+       " 'TopicTestByTr2',\n",
+       " 'connect-configs',\n",
+       " 'connect-offsets',\n",
+       " 'connect-status',\n",
+       " 'full.public.test',\n",
+       " 'pgsql2.public.test',\n",
+       " 'postgreSQL_CC_transaction.public.ds_cc_trans',\n",
+       " 'wordcounttopic'}"
+      ]
+     },
+     "execution_count": 7,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "#check to see if kafka topic has been automatically generated according to the naming convention and presettings in \"config\"\n",
+    "\n",
+    "\n",
+    "#!kafka-topics  --zookeeper 101.15.32.2:2181 --list\n",
+    "#!/opt/cloudera/parcels/CDH-6.2.1-1.cdh6.2.1.p0.4951328/lib/kafka/bin/kafka-topics.sh --zookeeper 101.15.32.2:2181 --list\n",
+    "KafkaConsumer(bootstrap_servers=hname2).topics()"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3.8.5 64-bit ('ProgramData': virtualenv)",
+   "name": "python385jvsc74a57bd0b3ba2566441a7c06988d0923437866b63cedc61552a5af99d1f4fb67d367b25f"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.8.5"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 4
+}
